@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <title>Apply for Proposal</title>
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">Apply for Proposal</h2>
+
+    <!-- Display Proposal Information -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title" th:text="${proposal.topic}">Proposal Title</h5>
+            <h6 class="card-subtitle mb-2 text-muted" th:text="${proposal.discipline.name} + ' - ' + ${proposal.speciality.name}">Discipline - Speciality</h6>
+            <p class="card-text" th:text="${proposal.description}">Description of the proposal.</p>
+        </div>
+    </div>
+    <br>
+    <!-- Application Form -->
+    <form th:action="@{/submitApplication}" th:object="${application}" th:method="post" enctype="multipart/form-data">
+        <input type="hidden" th:name="proposalId" th:value="${proposal.id}"/>
+
+        <div class="mb-3">
+            <label for="inscriptionNumber" class="form-label">Inscription Number (APPOGE):</label>
+            <input class="form-control" type="number" id="inscriptionNumber" name="inscriptionNumber" th:field="*{num_inscription}"  placeholder="Provide your Inscription Number" required></input>
+        </div>
+
+        <div class="mb-3 mt-3">
+            <label for="cv" class="form-label">Upload Your CV (PDF format):</label>
+            <input type="file" class="form-control" id="cv" name="cv" th:field="*{cv}" onchange="validateFileSize(this, 1);" accept=".pdf" required>
+        </div>
+
+        <div class="mb-3 mt-3">
+            <label for="cv" class="form-label">Upload Your Academic Grades (PDF format):</label>
+            <input type="file" class="form-control" id="grades" name="grades" th:field="*{notes}" onchange="validateFileSize(this,1);" accept=".pdf" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="cursus" class="form-label">Your Cursus:</label>
+            <textarea class="form-control" id="cursus" name="cursus" th:field="*{cursus}" rows="4" minlength="400" maxlength="900" placeholder="Provide details about your educational background" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="motivation" class="form-label">Motivation Letter:</label>
+            <textarea class="form-control" id="motivation" name="motivation" th:field="*{motivation}" rows="4" minlength="500" maxlength="900" placeholder="Write a short motivation letter" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Application</button>
+    </form>
+</div>
+
+<script>
+    function validateFileSize(input, maxSizeMB) {
+        if (input.files && input.files[0]) {
+            const fileSizeMB = input.files[0].size / (1024 * 1024);
+            if (fileSizeMB > maxSizeMB) {
+                alert(`File size exceeds ${maxSizeMB} MB. Please choose a smaller file.`);
+                input.value = ''; // Clear the input
+            }
+        }
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

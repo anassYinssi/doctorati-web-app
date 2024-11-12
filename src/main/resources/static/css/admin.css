@@ -1,0 +1,26 @@
+.spec-1{
+    text-align: center;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+.modal-dialog {
+    margin: 30px auto; /* Adds margin to top and bottom */
+}
+.modal-content {
+    padding: 20px; /* Adds padding inside the modal */
+    border-radius: 8px; /* Rounds the corners of the modal */
+}
+/* Media query for smaller screens */
+@media (max-width: 576px) {
+    .modal-dialog {
+        width: 90%; /* Makes the modal wider on smaller screens */
+    }
+    .modal-content {
+        padding: 15px; /* Reduces padding on smaller screens */
+    }
+}
+.admin-body{
+    margin-left: 15px;
+    margin-right: 15px;
+}
+

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Applications</title>
+    <link th:href="@{/css/professor.css}" rel="stylesheet">
+    <link th:href="@{/css/other.css}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const applications = /*[[${applications}]]*/ [];
+        /*]]>*/
+    </script>
+</head>
+<body>
+<div class="navbar-container" th:replace="fragments/professorNabar :: professorNavBar"></div>
+<h1 class="spec-1 mb-4">Manage Applications</h1>
+<div class="container mt-4">
+    <div class="applications-container mt-4">
+        <div id="applicationsContainer">
+            <!-- Displaying Pending applications -->
+            <div th:if="${applications != null and !applications.isEmpty()}" th:each="student_application : ${applications}" class="col-md-6 col-lg-4 mb-4">
+                <div th:if="${student_application.status == 'Pending'}" class="card application-card" th:data-application-id="${student_application.id}">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${student_application.student.firstname} +' '+ ${student_application.student.lastname}">Student Name</h5>
+                        <h6 class="card-subtitle mb-2 text-muted" th:text="${student_application.proposal.topic}">Thesis Title</h6>
+                        <p class="card-text">Status: <span class="status" th:text="${student_application.status}">Status</span></p>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-success btn-sm approve-btn" th:data-id="${student_application.id}">Approve</button>
+                            <button class="btn btn-danger btn-sm deny-btn" th:data-id="${student_application.id}">Deny</button>
+                            <button class="btn btn-info btn-sm" th:onclick="'showApplicationDetails(' + ${student_application.id} + ')'">Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display message if no applications found -->
+            <div class="col-12 text-center mt-4" th:if="${applications.isEmpty()}">
+                <div class="alert alert-warning" role="alert">
+                    There are no applications to display.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Application Details Modal -->
+<div class="modal fade" id="applicationDetailsModal" tabindex="-1" aria-labelledby="applicationDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header with a light theme -->
+            <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                <h5 class="modal-title" id="applicationDetailsModalLabel" style="color: #333;">
+                    <i class="bi bi-file-earmark-text-fill" style="color: #0d6efd;"></i> Application Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body" id="applicationDetailsContent">
+                <!-- Content will be dynamically populated by JavaScript -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+    function showApplicationDetails(id) {
+        const student_application = applications.find(app => app.id === id);
+        const modalContent = document.getElementById('applicationDetailsContent');
+        modalContent.innerHTML = `
+            <h4>${student_application.student.firstname} ${student_application.student.lastname}</h4>
+            <!-- Display Proposal Information -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">${student_application.proposal.topic}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">${student_application.proposal.discipline.name} - ${student_application.proposal.speciality.name}</h6>
+                </div>
+            </div>
+            <br>
+            <p><strong>APPOGE: </strong> ${student_application.num_inscription || 'Not provided'}</p>
+            <p><strong>Status: </strong> ${student_application.status}</p>
+            <p><strong>CV Document: </strong>
+                <i class="bi bi-file-earmark-pdf pdf-download-icon" onclick="downloadCvPDF(${student_application.id})" title="Download CV PDF"></i>
+            </p>
+            <p><strong>Grades Document:</strong>
+                <i class="bi bi-file-earmark-pdf pdf-download-icon" onclick="downloadGradesPDF(${student_application.id})" title="Download Grades PDF"></i>
+            </p>
+            <p><strong>Student Motivation: </strong> ${student_application.motivation || 'Not provided'}</p>
+            <p><strong>Student Cursus: </strong> ${student_application.cursus || 'Not specified'}</p>
+            <p><strong>Date of submission: </strong> ${student_application.applicationDate || 'Not specified'}</p>
+            <p><strong>Time of submission: </strong> ${student_application.applicationTime || 'Not specified'}</p>
+        `;
+        const modal = new bootstrap.Modal(document.getElementById('applicationDetailsModal'));
+        modal.show();
+    }
+
+    function downloadCvPDF(applicationId) {
+        const downloadUrl = `/api/applications/${applicationId}/download-cv-pdf`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.target = '_blank';
+        link.download = `application_${applicationId}_cv.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function downloadGradesPDF(applicationId) {
+        const downloadUrl = `/api/applications/${applicationId}/download-grades-pdf`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.target = '_blank';
+        link.download = `application_${applicationId}_grades.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function approveApplication(id) {
+        updateApplicationStatus(id, 'approve');
+    }
+
+    function denyApplication(id) {
+        updateApplicationStatus(id, 'deny');
+    }
+
+    function updateApplicationStatus(id, action) {
+        fetch(`/api/applications/${id}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+                // Add any necessary headers, like CSRF token if required
+            }
+        })
+            .then(response => response.json())
+            .then(updatedApplication => {
+                // Update the UI
+                const applicationCard = document.querySelector(`.application-card[data-application-id="${id}"]`);
+                if (applicationCard) {
+                    const statusSpan = applicationCard.querySelector('.status');
+                    statusSpan.textContent = updatedApplication.status;
+
+                    // Optionally, you can remove the card if it's no longer pending
+                    if (updatedApplication.status !== 'Pending') {
+                        applicationCard.remove();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating application status:', error);
+                // Optionally, show an error message to the user
+            });
+    }
+
+    // Add event listeners to approve and deny buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const approveButtons = document.querySelectorAll('.approve-btn');
+        const denyButtons = document.querySelectorAll('.deny-btn');
+
+        approveButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                approveApplication(this.getAttribute('data-id'));
+            });
+        });
+
+        denyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                denyApplication(this.getAttribute('data-id'));
+            });
+        });
+    });
+</script>
+</body>
+</html>

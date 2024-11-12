@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link th:href="@{/css/professor.css}" rel="stylesheet">
+    <link th:href="@{/css/other.css}" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var proposals = /*[[${proposals}]]*/ [];
+        /*]]>*/
+    </script>
+    <title>Manage Proposals</title>
+</head>
+<body>
+<div class="navbar-container" th:replace="fragments/professorNabar :: professorNavBar"></div>
+
+<h1 class="spec-1 mb-4">Manage Proposals</h1>
+
+<div class="container mt-5">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Topic</th>
+                <th scope="col">Discipline</th>
+                <th scope="col">Speciality</th>
+                <th scope="col">Skills</th>
+                <th scope="col">Objectives</th>
+                <th scope="col">Description</th>
+                <th scope="col">Professor</th>
+                <th scope="col">Proposal Date</th>
+                <th scope="col">Proposal Time</th>
+                <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="proposalList" th:if="${not #lists.isEmpty(proposals)}" th:each="proposal, iterStat : ${proposals}">
+            <tr>
+                <td th:text="${iterStat.index + 1}"></td>
+                <td class="truncate-text" th:title="${proposal.topic}" th:text="${proposal.topic}"></td>
+                <td th:title="${proposal.disciplineName}" th:text="${proposal.disciplineName}"></td>
+                <td th:title="${proposal.specialityName}" th:text="${proposal.specialityName}"></td>
+                <td class="truncate-text" th:title="${proposal.skills}" th:text="${proposal.skills}"></td>
+                <td class="truncate-text" th:title="${proposal.objectives}" th:text="${proposal.objectives}"></td>
+                <td class="truncate-text" th:title="${proposal.description}" th:text="${proposal.description}"></td>
+                <td th:title="${proposal.professorFullName}" th:text="${proposal.professorFullName}"></td>
+                <td th:text="${proposal.proposalDate}"></td>
+                <td th:text="${proposal.proposalTime}"></td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" data-bs-target="#proposalModal2" data-bs-toggle="modal" th:onclick="'viewProposal(' + ${iterStat.index} + ')'">View</button>
+                    <button class="btn btn-sm btn-warning me-1" data-bs-target="#editProposalModal"  data-bs-toggle="modal" th:onclick="'editProposal(' + ${proposal.id} + ')'">Edit</button>
+                    <a th:href="@{/professor/manageProposals/deleteProposal/{id}(id=${proposal.id})}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Are you sure you want to delete this proposal?');">Delete
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Structure for View Details -->
+<div class="modal fade" id="proposalModal2" tabindex="-1"  aria-labelledby="proposalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="proposalModalLabel">Proposal Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal1" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="proposalTitle"></h5>
+                <br>
+                <p><strong> # Id:</strong> <span id="proposalId"></span></p>
+                <p><strong>Discipline:</strong> <span id="proposalDiscipline"></span></p>
+                <p><strong>Speciality:</strong> <span id="proposalSpeciality"></span></p>
+                <p><strong>Skills:</strong> <span id="proposalSkills"></span></p>
+                <p><strong>Objectives:</strong> <span id="proposalObjectives"></span></p>
+                <p><strong>Description:</strong> <span id="proposalDescription"></span></p>
+                <p><strong>Professor:</strong> <span id="proposalProfessor"></span></p>
+                <p><strong>Proposal Date:</strong> <span id="proposalDate"></span></p>
+                <p><strong>Proposal Time:</strong> <span id="proposalTime"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal1">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Structure for Editing Proposal -->
+<div class="modal fade" id="editProposalModal" tabindex="-1" aria-labelledby="editProposalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProposalModalLabel">Edit Proposal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProposalForm" th:action="@{/updateProposal}" th:object="${updatedProposal}" method="post">
+                    <input type="hidden" id="editProposalId" name="id"/>
+
+                    <div class="mb-3">
+                        <label for="editTopic" class="form-label">Topic</label>
+                        <input type="text" class="form-control" id="editTopic" name="topic" th:field="*{topic}" required>
+                    </div>
+
+                    <!-- Discipline Selection -->
+                    <div class="mb-3">
+                        <label for="editDiscipline" class="form-label">Discipline</label>
+                        <select id="editDiscipline" class="form-select" name="discipline" required>
+                            <option value="">Select Discipline</option>
+                            <option th:each="discipline : ${disciplines}" th:value="${discipline.id}" th:text="${discipline.name}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Speciality Selection -->
+                    <div class="mb-3">
+                        <label for="editSpeciality" class="form-label">Speciality</label>
+                        <select id="editSpeciality" class="form-select" name="speciality" required>
+                            <option value="">Select Speciality</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editSkills" class="form-label">Skills</label>
+                        <textarea class="form-control" id="editSkills" name="skills" rows="3" th:field="*{skills}" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editObjectives" class="form-label">Objectives</label>
+                        <textarea class="form-control" id="editObjectives" name="objectives" rows="3" th:field="*{objectives}" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editDescription" name="description" rows="3" th:field="*{description}" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var selectedProposalId;
+
+    function viewProposal(index) {
+        var proposal = proposals[index];
+        selectedProposalId = proposal.id;
+        document.getElementById('proposalId').innerText = proposal.id;
+        document.getElementById('proposalTitle').innerText = proposal.topic;
+        document.getElementById('proposalDiscipline').innerText = proposal.disciplineName;
+        document.getElementById('proposalSpeciality').innerText = proposal.specialityName;
+        document.getElementById('proposalDescription').innerText = proposal.description;
+        document.getElementById('proposalSkills').innerText = proposal.skills;
+        document.getElementById('proposalObjectives').innerText = proposal.objectives;
+        document.getElementById('proposalProfessor').innerText = proposal.professorFullName;
+        document.getElementById('proposalDate').innerText = proposal.proposalDate;
+        document.getElementById('proposalTime').innerText = proposal.proposalTime;
+
+        var modal = new bootstrap.Modal(document.getElementById('proposalModal2'));
+        modal.show();
+    }
+
+    function editProposal(proposalId) {
+        const proposal = proposals.find(p => p.id === proposalId);
+
+        if (proposal) {
+            // Populate modal fields
+            document.getElementById('editProposalId').value = proposal.id;
+            document.getElementById('editTopic').value = proposal.topic;
+            document.getElementById('editSkills').value = proposal.skills;
+            document.getElementById('editObjectives').value = proposal.objectives;
+            document.getElementById('editDescription').value = proposal.description;
+
+
+            // Set the selected speciality after fetching them
+            setTimeout(() => {
+                document.getElementById('editSpeciality').value = proposal.speciality;
+            }, 500);
+
+            // Show the modal
+            var editModal = new bootstrap.Modal(document.getElementById('editProposalModal'));
+            editModal.show();
+        }
+    }
+
+    // Fetch specialities based on selected discipline
+    $(document).ready(function() {
+        $('#editDiscipline').change(function() {
+            var disciplineId = $(this).val();
+            var specialitySelect = $('#editSpeciality');
+
+            // Clear previous options
+            specialitySelect.empty();
+            specialitySelect.append($('<option>', {
+                value: '',
+                text: 'Select Speciality'
+            }));
+
+            // Fetch new specialities
+            if (disciplineId) {
+                $.get('/api/specialities', { disciplineId: disciplineId }, function(data) {
+                    $.each(data, function(index, speciality) {
+                        specialitySelect.append($('<option>', {
+                            value: speciality.id,
+                            text: speciality.name
+                        }));
+                    });
+                });
+            }
+        });
+    });
+
+
+    /*]]>*/
+</script>
+
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
